@@ -47,34 +47,18 @@ void setup() {
   client.open("3.39.126.121", 3000);
 }
 
+
 void loop() {
   client.listen();
-  
-  // 시리얼 입력이 완성되면 전송
-  if (stringComplete) {
-    if (true) {
-      client.send(WebSocket::DataType::TEXT, 
-                 inputString.c_str(), 
-                 inputString.length());
-      Serial.println("전송됨: " + inputString);
-    }
-    
-    // 문자열 초기화
-    inputString = "";
-    stringComplete = false;
-  }
-}
 
-// 시리얼 이벤트 처리
-void serialEvent() {
-  while (Serial.available()) {
-    char inChar = (char)Serial.read();
-    
-    // 개행문자가 입력되면 문자열 완성
-    if (inChar == '\n') {
-      stringComplete = true;
-    } else {
-      inputString += inChar;
-    }
+  while(Serial.available()) {
+    inputString = Serial.readStringUntil('\n');
+    client.send(WebSocket::DataType::TEXT, 
+                inputString.c_str(), 
+                inputString.length());
+    Serial.println("전송됨: " + inputString);
+
+    // while(Serial.read()) ;
+    inputString = "";
   }
 }
