@@ -1,67 +1,80 @@
-#include <ArduinoHttpClient.h>
+#include <WebSocketClient.h>
 #include <WiFiS3.h>
 
-///////please enter your sensitive data in the Secret tab/arduino_secrets.h
-/////// WiFi Settings ///////
-char ssid[] = "Daesin1";
-char pass[] = "ds0123456";
+using namespace net;
 
-char serverAddress[] = "echo.websocket.org";  // server address
-int port = 80;
+WebSocketClient client;
+String inputString = "";      // 시리얼 입력을 저장할 문자열
+boolean stringComplete = false;  // 문자열 완성 여부
 
-WiFiClient wifi;
-WebSocketClient client = WebSocketClient(wifi, serverAddress, port);
+const char ssid[] = "Daesin1";
+const char pass[] = "ds0123456";
 int status = WL_IDLE_STATUS;
-int count = 0;
 
 void setup() {
   Serial.begin(9600);
-  while ( status != WL_CONNECTED) {
-    Serial.print("Attempting to connect to Network named: ");
-    Serial.println(ssid);                   // print the network name (SSID);
+  inputString.reserve(200);  // 문자열을 위한 공간 예약
+  
+  String fv = WiFi.firmwareVersion();
+  if (fv < WIFI_FIRMWARE_LATEST_VERSION)
+    Serial.println("Please upgrade the firmware");
 
-    // Connect to WPA/WPA2 network:
+  while (status != WL_CONNECTED) {
+    Serial.print("Attempting to connect to SSID: ");
+    Serial.println(ssid);
     status = WiFi.begin(ssid, pass);
+    delay(4000);
   }
 
-  // print the SSID of the network you're attached to:
-  Serial.print("SSID: ");
-  Serial.println(WiFi.SSID());
-
-  // print your WiFi shield's IP address:
-  IPAddress ip = WiFi.localIP();
   Serial.print("IP Address: ");
-  Serial.println(ip);
+  Serial.println(WiFi.localIP());
+
+  client.onOpen([](WebSocket &ws) {
+    Serial.println("연결됨 - 메시지를 입력하세요:");
+  });
+  
+  client.onClose([](WebSocket &ws, const WebSocket::CloseCode code,
+                   const char *reason, uint16_t length) {
+    Serial.println("연결이 종료되었습니다.");
+  });
+  
+  client.onMessage([](WebSocket &ws, const WebSocket::DataType dataType,
+                     const char *message, uint16_t length) {
+    Serial.print("서버 응답: ");
+    Serial.println(message);
+  });
+
+  client.open("3.39.126.121", 3000);
 }
 
 void loop() {
-  Serial.println("starting WebSocket client");
-  client.begin();
-
-  while (client.connected()) {
-    Serial.print("Sending hello ");
-    Serial.println(count);
-
-    // send a hello #
-    client.beginMessage(TYPE_TEXT);
-    client.print("hello ");
-    client.print(count);
-    client.endMessage();
-
-    // increment count for next message
-    count++;
-
-    // check if a message is available to be received
-    int messageSize = client.parseMessage();
-
-    if (messageSize > 0) {
-      Serial.println("Received a message:");
-      Serial.println(client.readString());
+  client.listen();
+  
+  // 시리얼 입력이 완성되면 전송
+  if (stringComplete) {
+    if (true) {
+      client.send(WebSocket::DataType::TEXT, 
+                 inputString.c_str(), 
+                 inputString.length());
+      Serial.println("전송됨: " + inputString);
     }
-
-    // wait 5 seconds
-    delay(5000);
+    
+    // 문자열 초기화
+    inputString = "";
+    stringComplete = false;
   }
+}
 
-  Serial.println("disconnected");
+// 시리얼 이벤트 처리
+void serialEvent() {
+  while (Serial.available()) {
+    char inChar = (char)Serial.read();
+    
+    // 개행문자가 입력되면 문자열 완성
+    if (inChar == '\n') {
+      stringComplete = true;
+    } else {
+      inputString += inChar;
+    }
+  }
 }
