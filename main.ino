@@ -13,6 +13,7 @@ int status = WL_IDLE_STATUS;
 
 void setup() {
   Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
   inputString.reserve(200);  // 문자열을 위한 공간 예약
   
   String fv = WiFi.firmwareVersion();
@@ -42,7 +43,18 @@ void setup() {
                      const char *message, uint16_t length) {
     Serial.print("서버 응답: ");
     Serial.println(message);
+    if (strcmp(message, "on") == 0) {
+      digitalWrite(LED_BUILTIN, HIGH);
+      Serial.println("LED 켜짐");
+    }
+    // 메시지가 "off"이면 LED 끄기
+    else if (strcmp(message, "off") == 0) {
+      digitalWrite(LED_BUILTIN, LOW);
+      Serial.println("LED 꺼짐");
+    }
   });
+
+  
 
   client.open("3.39.126.121", 3000);
 }
@@ -61,4 +73,6 @@ void loop() {
     // while(Serial.read()) ;
     inputString = "";
   }
+
+  
 }
