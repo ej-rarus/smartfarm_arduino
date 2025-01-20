@@ -3,8 +3,8 @@
 
 ///////please enter your sensitive data in the Secret tab/arduino_secrets.h
 /////// WiFi Settings ///////
-const char ssid[] = "Daesin2";
-const char pass[] = "ds0123456";
+const char ssid[] = "sfarm_2.4g";
+const char pass[] = "ds123456";
 int status = WL_IDLE_STATUS;
 
 char serverAddress[] = "3.39.126.121";  // server address

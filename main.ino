@@ -7,8 +7,8 @@ WebSocketClient client;
 String inputString = "";      // 시리얼 입력을 저장할 문자열
 boolean stringComplete = false;  // 문자열 완성 여부
 
-const char ssid[] = "Daesin2";
-const char pass[] = "ds0123456";
+const char ssid[] = "sfarm_2.4g";
+const char pass[] = "ds123456";
 int status = WL_IDLE_STATUS;
 
 //핀 번호 설정
