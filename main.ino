@@ -26,6 +26,11 @@ unsigned long fanStartTime = 0;
 int fanTimerDuration = 0;
 bool isFanTimerActive = false;
 
+// 전역 변수 추가
+unsigned long mistStartTime = 0;
+int mistTimerDuration = 0;  // 초 단위
+bool isMistTimerActive = false;
+
 void setup() {
   Serial.begin(9600);
   pinMode(LED_BUILTIN, OUTPUT);
@@ -117,10 +122,10 @@ void setup() {
     // PUMP 제어
     if (strcmp(message, "PUMP_ON") == 0) {
       digitalWrite(PUMP_PIN, HIGH);
-      Serial.println("WATER 켜짐");
+      Serial.println("PUMP 켜짐");
     } else if (strcmp(message, "PUMP_OFF") == 0) {
       digitalWrite(PUMP_PIN, LOW);
-      Serial.println("WATER 꺼짐");
+      Serial.println("PUMP 꺼짐");
     }
 
     // MIST 제어
@@ -130,6 +135,21 @@ void setup() {
     } else if (strcmp(message, "MIST_OFF") == 0) {
       digitalWrite(MIST_PIN, LOW);
       Serial.println("MIST 꺼짐");
+    }
+
+    // MIST 타이머 처리
+    if (strncmp(message, "MIST_TIMER_", 11) == 0) {
+        const char* timerValue = message + 11;
+        int seconds = atoi(timerValue);
+        
+        if (seconds > 0) {
+            Serial.printf("MIST 타이머 %d초 설정\n", seconds);
+            digitalWrite(MIST_PIN, HIGH);  
+            
+            mistStartTime = millis();
+            mistTimerDuration = seconds;
+            isMistTimerActive = true;
+        }
     }
 
   });
@@ -173,6 +193,18 @@ void loop() {
       digitalWrite(FAN_PIN, LOW);
       isFanTimerActive = false;
       Serial.println("FAN 타이머 종료");
+    }
+  }
+
+  // MIST 타이머 체크
+  if (isMistTimerActive) {
+    unsigned long currentTime = millis();
+    unsigned long elapsedSeconds = (currentTime - mistStartTime) / 1000;  // 밀리초를 초로 변환
+    
+    if (elapsedSeconds >= mistTimerDuration) {
+        digitalWrite(MIST_PIN, LOW);
+        isMistTimerActive = false;
+        Serial.println("MIST 타이머 종료");
     }
   }
 }
