@@ -17,6 +17,14 @@ int LED_PIN = 5;
 int PUMP_PIN = 6;
 int MIST_PIN = 7;
 
+// LED와 FAN 타이머를 위한 전역 변수
+unsigned long ledStartTime = 0;
+int ledTimerDuration = 0;
+bool isLedTimerActive = false;
+
+unsigned long fanStartTime = 0;
+int fanTimerDuration = 0;
+bool isFanTimerActive = false;
 
 void setup() {
   Serial.begin(9600);
@@ -64,6 +72,23 @@ void setup() {
       Serial.println("LED 꺼짐");
     }
 
+    // LED 타이머 제어
+    if (strncmp(message, "LED_TIMER_", 10) == 0) {
+        const char* timerValue = message + 10;  // "LED_TIMER_" 이후의 문자열
+        int hours = atoi(timerValue);  // 문자열을 정수로 변환
+        
+        if (hours > 0) {
+            Serial.printf("LED 타이머 %d시간 설정\n", hours);
+            // 타이머 시작 로직
+            digitalWrite(LED_PIN, HIGH);  // LED 켜기
+            
+            // 타이머 시작
+            ledStartTime = millis();
+            ledTimerDuration = hours;
+            isLedTimerActive = true;
+        }
+    }
+
     // FAN 제어
     if (strcmp(message, "FAN_ON") == 0) {
       digitalWrite(FAN_PIN, HIGH);
@@ -73,7 +98,23 @@ void setup() {
       Serial.println("FAN 꺼짐");
     }
 
-    // WATER 제어
+    // FAN 타이머 제어
+    if (strncmp(message, "FAN_TIMER_", 10) == 0) {
+        const char* timerValue = message + 10;
+        int hours = atoi(timerValue);
+        
+        if (hours > 0) {
+            Serial.printf("FAN 타이머 %d시간 설정\n", hours);
+            pinMode(FAN_PIN, OUTPUT);     
+            digitalWrite(FAN_PIN, HIGH);  
+            
+            fanStartTime = millis();
+            fanTimerDuration = hours;
+            isFanTimerActive = true;
+        }
+    }
+
+    // PUMP 제어
     if (strcmp(message, "PUMP_ON") == 0) {
       digitalWrite(PUMP_PIN, HIGH);
       Serial.println("WATER 켜짐");
@@ -90,13 +131,11 @@ void setup() {
       digitalWrite(MIST_PIN, LOW);
       Serial.println("MIST 꺼짐");
     }
+
   });
-
-
 
   client.open("3.39.126.121", 3000);
 }
-
 
 void loop() {
   client.listen();
@@ -110,5 +149,30 @@ void loop() {
 
     // while(Serial.read()) ;
     inputString = "";
+  }
+
+  // LED 타이머 체크
+  if (isLedTimerActive) {
+    unsigned long currentTime = millis();
+    // 경과 시간을 시간 단위로 계산 (1시간 = 3600000 밀리초)
+    unsigned long elapsedHours = (currentTime - ledStartTime) / (1000UL * 60 * 60);
+    
+    if (elapsedHours >= ledTimerDuration) {
+      digitalWrite(LED_PIN, LOW);  // LED 끄기
+      isLedTimerActive = false;
+      Serial.println("LED 타이머 종료");
+    }
+  }
+
+  // FAN 타이머 체크
+  if (isFanTimerActive) {
+    unsigned long currentTime = millis();
+    unsigned long elapsedHours = (currentTime - fanStartTime) / (1000UL * 60 * 60);
+    
+    if (elapsedHours >= fanTimerDuration) {
+      digitalWrite(FAN_PIN, LOW);
+      isFanTimerActive = false;
+      Serial.println("FAN 타이머 종료");
+    }
   }
 }
