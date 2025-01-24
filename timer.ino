@@ -33,11 +33,20 @@ bool isMistTimerActive = false;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(LED_BUILTIN, OUTPUT);
+  
+  // 모든 핀 초기화 및 켜기
   pinMode(FAN_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
   pinMode(MIST_PIN, OUTPUT);
+  
+  digitalWrite(FAN_PIN, HIGH);
+  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(PUMP_PIN, HIGH);
+  
+  Serial.println("모든 장치 켜짐");
+  
+  pinMode(LED_BUILTIN, OUTPUT);
   inputString.reserve(200);  // 문자열을 위한 공간 예약
 
   String fv = WiFi.firmwareVersion();

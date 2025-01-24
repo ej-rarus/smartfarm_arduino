@@ -33,11 +33,20 @@ bool isMistTimerActive = false;
 
 void setup() {
   Serial.begin(9600);
-  pinMode(LED_BUILTIN, OUTPUT);
+  
+  // 모든 핀 초기화 및 켜기
   pinMode(FAN_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
   pinMode(MIST_PIN, OUTPUT);
+  
+  digitalWrite(FAN_PIN, HIGH);
+  digitalWrite(LED_PIN, HIGH);
+  digitalWrite(PUMP_PIN, HIGH);
+  
+  Serial.println("모든 장치 켜짐");
+  
+  pinMode(LED_BUILTIN, OUTPUT);
   inputString.reserve(200);  // 문자열을 위한 공간 예약
 
   String fv = WiFi.firmwareVersion();
@@ -83,7 +92,9 @@ void setup() {
         int hours = atoi(timerValue);  // 문자열을 정수로 변환
         
         if (hours > 0) {
-            Serial.printf("LED 타이머 %d시간 설정\n", hours);
+            Serial.print("LED 타이머 ");
+            Serial.print(hours);
+            Serial.println("시간 설정\n");
             // 타이머 시작 로직
             digitalWrite(LED_PIN, HIGH);  // LED 켜기
             
@@ -109,8 +120,9 @@ void setup() {
         int hours = atoi(timerValue);
         
         if (hours > 0) {
-            Serial.printf("FAN 타이머 %d시간 설정\n", hours);
-            pinMode(FAN_PIN, OUTPUT);     
+            Serial.print("FAN 타이머 ");
+            Serial.print(hours);
+            Serial.println("시간 설정\n");            
             digitalWrite(FAN_PIN, HIGH);  
             
             fanStartTime = millis();
@@ -143,7 +155,9 @@ void setup() {
         int seconds = atoi(timerValue);
         
         if (seconds > 0) {
-            Serial.printf("MIST 타이머 %d초 설정\n", seconds);
+            Serial.print("MIST 타이머 ");
+            Serial.print(seconds);
+            Serial.println("초 설정\n");
             digitalWrite(MIST_PIN, HIGH);  
             
             mistStartTime = millis();
@@ -166,8 +180,6 @@ void loop() {
                 inputString.c_str(),
                 inputString.length());
     Serial.println("전송됨: " + inputString);
-
-    // while(Serial.read()) ;
     inputString = "";
   }
 
@@ -180,6 +192,8 @@ void loop() {
     if (elapsedHours >= ledTimerDuration) {
       digitalWrite(LED_PIN, LOW);  // LED 끄기
       isLedTimerActive = false;
+      const char message[]{"LED_OFF"};
+      client.send(WebSocket::DataType::TEXT, message, strlen(message));
       Serial.println("LED 타이머 종료");
     }
   }
@@ -192,6 +206,8 @@ void loop() {
     if (elapsedHours >= fanTimerDuration) {
       digitalWrite(FAN_PIN, LOW);
       isFanTimerActive = false;
+      const char message[]{"FAN_OFF"};
+      client.send(WebSocket::DataType::TEXT, message, strlen(message));
       Serial.println("FAN 타이머 종료");
     }
   }
@@ -204,6 +220,8 @@ void loop() {
     if (elapsedSeconds >= mistTimerDuration) {
         digitalWrite(MIST_PIN, LOW);
         isMistTimerActive = false;
+        const char message[]{"MIST_OFF"};
+        client.send(WebSocket::DataType::TEXT, message, strlen(message));
         Serial.println("MIST 타이머 종료");
     }
   }
